@@ -1,10 +1,10 @@
 # qdpeg
 Yet another parsing expression grammar
 # Introduction
-qdpeg is a simple (Quick and Dirty) Parsing Expression Grammer parsing library.
+qdpeg is a simple (Quick and Dirty) [Parsing Expression Grammer parsing](https://en.wikipedia.org/wiki/Parsing_expression_grammar) library.
 
 If you need code that helps you convert text to a native C++ type, this library might be for you. qdpeg contains:
-  - built-in parsers for stuff such as characters, integers and whitespace
+  - [built-in parsers](##built-in-parsers) for stuff such as characters, integers and whitespace
   - parser-generators which combine individual parsers into new, more powerful ones
   - adaptors that manipulate the result of a parser to eg. perform further checks of the parsed value and/or transform the type of the parsed value.
 ## Requirements
@@ -66,9 +66,9 @@ parse("- 1734",int_parser<int>); // failure/" 1734" (space not allowed)
 So parsing "- 1734" with the int parser results in a failure where " 1734" was not parsed. As the comment indicates, this is because a space can not be part of an integer.
 
 The example-code given here can be found (with small modifications for checking of results) in the file examplecpp.
-# Built-in parser
-* [character parsers] (#Character-parsers)
-* [integer parsers] (#Integer-parsers)
+# Built-in parsers
+* [character parsers] (##character-parsers)
+* [integer parsers] (##integer-parsers)
 * [floating-point parsers] (#integer parsers)
 * [Symbol parsers](#Integer-parsers)
 * [skippers] (#skippers
