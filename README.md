@@ -20,26 +20,40 @@ The library is header-only and only requires Peter Dimovs excellent mp11 templat
 Performance is not a goal, so do test performance if you intend to parse e.g. multi-megabyte xml or json files. That said, qdpeg is inherently easy to optimize giving good performance in the scenarios where it is currently used. There are no virtual functions, type-erasure or other constructs that might prevent an optimizer from doing its job.
 ## Evolution of qdpeg
 Following items are on my todo/wishlist:
-Allowing state to be added to parsers. It would be nice if you could pass state to the parsers - e.g. to hold positions of text and a general symbol table.
-Less generic error messages.
-Unicode support.
-Check performance and consider possible improvements.
-Automatic detection of left-recursion.
+ - Allowing state to be added to parsers. It would be nice if you could pass state to the parsers - e.g. to hold positions of text and a general symbol table.
+ - Less generic error messages.
+ - Unicode support.
+ - Check performance and consider possible improvements.
+ - Detection of left-recursion.
 ## Anatomy of a parser
 In qdpeg, a parser is a callable object such as a function or lambda, that when called with a begin and an end to input either succeeds and returns the parsed object and a position in the input, marking where new input can be consumed or an error, containing a position where parsing failed and a generic error-message.
 If a parser parses data of a given type T, the parser returns a Parse_result<T>. Here we name parsers according to what they return so a string parser is a parser that returns Parse_result<std::string>. A whitespace parser is called a skipper. Formally it returns Parse_result<Nothing>, where Nothing is a special, empty type.
 
 You can write your own parser from scratch. This simple parser, that parses the single character '1' is a perfectly valid qdpeg parser:
 ```c++
-Parse_result<char> parse_literal_1(Iter b, Iter e)
+Parse_result<char> parse_one_1(Iter b, Iter e)
 {
-	if (b == e) return { b, unexpected_eof };
+    if (b == e) return { b, unexpected_eof };
     auto res = *b;
     if (res != '1') return { b, unexpected_char };
     return { ++b, res };
 }
 ```
 The return value of a parser is convertible to bool. It converts to true if and only if the parsing succeeds. If the parsing succeeds, use value() to get the result of the parse, if it fails use error() to get the error code. 
+A parser generator is a function that returns a parser. A simple example:
+```c++
+auto parse_one_char(char ch)
+{
+    return [ch](Iter b,Iter e) -> Parse_result<char>
+    {
+        if (b == e) return { b, unexpected_eof };
+        auto res = *b;
+        if (res != ch) return { b, unexpected_char };
+        return { ++b, res };
+     };
+}
+```
+Here we return a parser implemented as a lambda.
 In qdpeg, white space parsers must be explicitly specified. They are recognised in that their return type is qdpeg::Skipper, which is an alias for Parse_result<qdpeg::Nothing>.
 
 # Examples
@@ -53,23 +67,23 @@ So parsing "- 1734" with the int parser results in a failure where " 1734" was n
 
 The example-code given here can be found (with small modifications for checking of results) in the file examplecpp.
 # Built-in parser
-* [character parsers] 
-* [integer parsers] (#integer parsers)
+* [character parsers] (#Character-parsers)
+* [integer parsers] (#Integer-parsers)
 * [floating-point parsers] (#integer parsers)
 * [Symbol parsers](#Integer-parsers)
 * [skippers] (#skippers
 
 # Parser generators
-** [character parsers] (#character-parsers*)
+** [character parsers] (#character-parsers)
 ** [integer parsers] (#integer parsers)
-*** [floating-point parsers] (#integer parsers)
-*** [skippers] (rs)
+** [floating-point parsers] (#integer parsers)
+** [skippers] (rs)
 
 ## character parsers
 `char_any`: parses any character.
-template<char... Chars> char_from parses any character in the template parameter list.
-template<char... Chars> char_not_from parses any character not in the template parameter list.
-template<class F> char_if(F true_cond) returns a parser that parses any character c for which true_cond(c) holds.
+`template<char... Chars> char_from` parses any character in the template parameter list.
+`template<char... Chars> char_not_from` parses any character not in the template parameter list.
+`template<class F> char_if(F true_cond)` returns a parser that parses any character c for which true_cond(c) holds.
 
 ## Integer parsers
 The integer parser is a templated function that supports parsing of integral signed and unsigned types. The synopsis is:
@@ -88,7 +102,7 @@ auto int_parser(Iter b,Iter e)
 `none`: where a sign is not allowed
 `minus`: when an optional - is allowed
 `allowed`: when an optional - or + is allowed
-`required`: when an optional - or + is required
+`required`: when an optional - or + is required.
 Default value is none for unsigned types and allowed for signed types.
 -MinDigits is the least number of integers allowed.
 -MaxDigits is the largest number of digits allowed.
