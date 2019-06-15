@@ -2,7 +2,7 @@
 Welcome to qdpeg, yet another parsing expression grammar. I propose a linear read/skim of this document, but if you wish, you can skip directly to the relevant sections:
 * [Introduction](#introduction) which has a short motivation for our library.
 * [Examples and reference](#Examples-and-reference) to find code snippets and more information.
-* [Guide-lines and evolution](#Examples-and-reference) where you will find some thoughts about the evolution and guide-lines for how you should use qdpeg.
+* [Guide-lines and evolution](#Guide-lines-and-evolution) where you will find some thoughts about the evolution and guide-lines for how you should use qdpeg.
 
 # Introduction
 qdpeg is a simple (quick and dirty) [Parsing Expression Grammer](https://en.wikipedia.org/wiki/Parsing_expression_grammar) parsing library.
@@ -69,12 +69,12 @@ but cutting a few corners does, I believe, increase readability in tables.
 
 ## Built-in parsers
 The built-in parsers parse a given type. There is support for standard C++ data-types such as char, integrals and floating-point types.
-* [Character parsers](##character-parsers)
-* [Integer parsers](##Integer-parsers)
-* [Floating-point parsers](#floating-point-parsers)
+* [Character parsers](#character-parsers)
+* [Integer parsers](#Integer-parsers)
+* [Floating-point parsers](#Floating-point-parsers)
 * [Symbol parsers](#Symbol-parsers)
 * [Emit](#Emit)
-* [Skip parsers](##Skip-parsers)
+* [Skip parsers](#Skip-parsers)
 
 ## Parser generators
 Parser generators are generic parsers that combine other parsers to generate new and often more complex parsers and do as such form the soul of a real parser. You can use this type of generator to create e.g. XML and JSON parsers.
