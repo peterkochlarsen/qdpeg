@@ -35,7 +35,7 @@ Parse_result<char> parse_digit(Iter b, Iter e)
     return { b, unexpected_char };                      //  Not a digit
 }
 ```
-The return value of a parser is convertible to bool. It converts to true if and only if the parsing succeeds. If the parsing succeeds, use value() to get the result of a successful parse, error() to get the error code. 
+The return value of a parser is convertible to bool. It converts to true if and only if the parsing succeeds. You can call `value()` to get the result of a successful parse, `error()` to get the error code for an unsuccessful one. 
 A high-order parser is a function (or, more formally, a `callable`) that returns a parser. A simple example:
 ```c++
 auto char_range(char lo,char hi)
@@ -49,7 +49,7 @@ auto char_range(char lo,char hi)
      };
 }
 ```
-So char_range(('0','9'))(begin,end) has exactly the same effect as calling parse_digit(begin,end).
+Calling char_range(('0','9'))(begin,end) has exactly the same effect as calling parse_digit(begin,end).
 
 # Examples and reference
 In the examples following, you should expect a using namespace qdpeg directive and that appropriate files have been included.
@@ -69,12 +69,12 @@ but cutting a few corners does, I believe, increase readability in tables.
 
 ## Built-in parsers
 The built-in parsers parse a given type. There is support for standard C++ data-types such as char, integrals and floating-point types.
-* [character parsers](##character-parsers)
-* [integer parsers](##Integer-parsers)
-* [floating-point parsers](#floating-point-parsers)
-* [Symbol parsers](#Integer-parsers)
-* [emit](#emit)
-* [skip parsers](##skip-parsers)
+* [Character parsers](##character-parsers)
+* [Integer parsers](##Integer-parsers)
+* [Floating-point parsers](#floating-point-parsers)
+* [Symbol parsers](#Symbol-parsers)
+* [Emit](#Emit)
+* [Skip parsers](##Skip-parsers)
 
 ## Parser generators
 Parser generators are generic parsers that combine other parsers to generate new and often more complex parsers and do as such form the soul of a real parser. You can use this type of generator to create e.g. XML and JSON parsers.
@@ -84,7 +84,7 @@ Parser generators are generic parsers that combine other parsers to generate new
 * [The and_p and not_p parsers](#The-and_p-and-not_p-parsers)
 
 ## Character parsers
-All character parsers fail at end of file
+
 | Signature | Succeeds when |
 | --- | --- |
 |`char_any`| any character is present
@@ -112,7 +112,7 @@ bool is_vowel(char ch)
     || ch == 'o' || ch == 'y' || ch == 'u';
 }
 
-parse("qdpeg",is_vowel);  // Failure/"qdpeg"
+parse("qdpeg",char_if(is_vowel));  // Failure/"qdpeg"
 ```
 ## Integer parsers
 int_parser is a templated function that supports parsing of integral signed and unsigned types. The text is interpreted as an integer in the given radix, failing also if the value can't be represented by the internal type.
@@ -132,6 +132,7 @@ auto int_parser(Iter b,Iter e)
         -> Parse_result<T>;
 ```
 Where:
+
 | Parameter | Function |
 | --- | --- |
 |`T` | integer type to parse| 
@@ -191,6 +192,7 @@ auto real_parser(Iter b,Iter e) -> Parse_result<Real>
 |`digits_max` | most numbers in whole part |
 
 exp_p determines the presence of the C++-style exponent part using the exponent_format enumeration class with these options:
+
 | Value | Meaning|
 |---|---|
 | none |  Not accepted | 
@@ -198,6 +200,7 @@ exp_p determines the presence of the C++-style exponent part using the exponent_
 | required | required | 
 
 dec_p determines the presence and format of the decimal seperator using the decpoint_policy enum class giving these options:
+
 | Value | Meaning|
 |---|---|
 | allow_point | Allow a '.' as separator | 
@@ -234,7 +237,7 @@ parse("Mae",m_name_parser);           // mae/""
 parse("Maes",m_name_parser);          // mae/"s"            (Greedy match)
 parse("Mary Ellen",m_name_parser);    // mary_ellen/""
 ```
-## emit
+## Emit
 The `emit` parser generator is a simple parser that always succeeds, returning a value of some type. 
 
 ### Example
@@ -254,19 +257,19 @@ A skipper parses generic white space - text that may or must be present in the s
 | --- | --- |
 |`textspace`|Skips standard whitespace such as spaces, tabs, newline
 |`linespace`|Whitespace within a line
-|`eof`| succeeds at end of file
-|`eol`| succeeds at end of line, supporting Unix, Windows and Mac style line-endings
-|`lit(char ch)`| parses ch and skips it
-|`ci_lit(char ch)`| as lit but ignoring case
+|`eof`| Succeeds at end of file
+|`eol`| Succeeds at end of line, supporting Unix, Windows and Mac style line-endings
+|`lit(char ch)`| Parses ch and skips it
+|`ci_lit(char ch)`| As lit but ignoring case
 |`lit(string)`| Skips a string 
 |`ci_lit(string)`|Skips a string ignoring case
 |`spaced_lit(char ch)`| Skips ch ignoring text-space around ch
-|`skip(Parser P)`| Skips ch ignoring text-space around ch
+|`skip(Parser P)`| Skip P
 |`empty`| Always succeeds
 |`fail`|  Always fails
-|`template<class T> fail_as`|  Always fails, using a non-skipper result
+|`fail_as<T>`|  Fail using a T result
 
-`textspace` skips standard white space and `linespace` skips white space that does not create a new line
+`textspace` skips standard white space and `linespace` skips whitespace that does not create a new line
 ```c++
 parse("\n\t  \n\r  Hello",textspace);   // OK/"Hello" 
 parse("",textspace);        // OK/"" (whitespace match)
@@ -282,8 +285,9 @@ parse("E",lit('e'));        // Fails - wrong case
 
 parse("if",lit("if"));      // Ok 
 parse("If",lit("if"));     // fails - wrong case
-
 parse("iF",ci_lit("if"));   // OK - case insensitive
+
+parse("123",skip(int_parser<int>));   // OK/"" 
 ```
 
 `spaced_lit` skips a single character and its surrounding white space
@@ -301,7 +305,7 @@ parse("\n",eof);            //  Failure/"\n" (eof does not skip white space)
 ```
 `skip` is a generator which takes a parser as input. It parses using its argument, discards any value and returns the result as a Skipper.
 ```c++
-parse("123 is a number",skip(int_parser<int>));  //  Ok/"is a number"
+parse("123 is a number",skip(int_parser<int>));  //  Ok/" is a number"
 ```
 `empty` and `fail` are two special skippers. `empty` always succeeds ands `fail` always fails. They can be useful when constructing other parsers.
 `fail_as` also fails but returns a typed value. Technically, this makes `fail_as` a real parser, not a skipper
@@ -318,6 +322,7 @@ A weakly typed parser is a parser that has not been told to behave as a particul
 For a strongly typed parser, the user supplies the type and the type of the parser then becomes the type supplied. If the actual object can not be created from its weak type, the result is a compile-time error.
 ## Repeat parsers
 The repeat-group of parsers parses a sequence of elements of the same type with the option to restrict the number of elements to parse and the possibility to add a skipper to parse white space between elements.
+
 | Synopsis | Function |
 | --- | --- |
 |`repeat(Parser e,Skip ws,Length_checker lchk)`| parses N to M white space seperated elements|
@@ -325,15 +330,17 @@ The repeat-group of parsers parses a sequence of elements of the same type with 
 
 The first function is weakly typed, returning a skipper if given a skipper, a std::string if e is a char-parser and a std::vector of the element e parses to. In both cases, the Skip function must be a skipper.
 
-`Length_checker` is a class checking the lengths allowed for repeated input. Instantiate it using one of these function:
+`Length_checker` is a class checking the lengths allowed for repeated input. Instantiate it using one of these functions:
+
 | Synopsis | Function |
 | --- | --- |
 |`at_least(N)`| lower limit of N items|
 |`at_most(N)`| max limit of N items|
 |`take(N,M)`| Take from N to M items (inclusive)|
-|`take(N)`| Same as `take(N,M)`|
+|`take(N)`| Same as `take(N,N)`|
 
-For repeat, you can omit the skipper, in which case the input is parsed without skipping and/or the length_checker in which case there are no restrictions on the number of elements allowed:
+For repeat, you can omit the skipper and/or the length_checker in which case there are no restrictions on the number of elements allowed:
+
 | Synopsis | Equivalence  |
 | --- | --- |
 |`repeat(Parser e,Length_checker lchk)`| `repeat(Parser e,empty,Length_checker lchk)`|
@@ -381,6 +388,7 @@ The seq parsers parse a sequence of items in order. There are four varieties: tw
 A parser supplied to seq or seq_ws can be a skipper or a real parser. The Skip parameter in seq_ws must be a skipper and will be activated between each ps, also for skippers.
 
 The weakly typed sequence parsers will be of the following type, where all ps that are skippers are ignored:
+
 | When | Resulting type |
 | --- | --- |
 | ps is empty | a skipper |
@@ -473,7 +481,8 @@ parse(100u,"0b1100100",cpp_int_lit);    //  Binary
 ```
 ## The and_p and not_p parsers
 The `and_p` and `not_p` parsers come in two varieties. The first type takes a parser and the result is a skipper that for `and_p` succeeds if the parser succeeds and for `not_p` succeeds if p fails. What is special is that none of the parsers consume any input.
-The second variety accepts two parsers. These parsers are correspond to a and_p/not_p of the first parameter followed - if this parser succceeded by a call of the second parser
+The second variety accepts two parsers. These parsers are correspond to a and_p/not_p of the first parameter followed - if this parser succceeded by a call of the second parser.
+
 | Synopsis | Generator |
 | --- | --- |
 |`not_p(Parser p)`| succeeds without consuming input iff p fails  |
@@ -490,7 +499,7 @@ parse("//",not_p(lit("//")));   // Failure/"//"
 parse("aa",and_p(alnum()));     // Ok/"aa"
 parse("aa",not_p(alnum()));     // failure/"aa"
 ```
-An example of parsing a line comment. This code is not fully compliant as line continuation is disregarded.
+An example of parsing a C++ line comment. For simplicity, a line continuation is disregarded.
 ```c++
 auto cpp_line_comment = seq(lit("//"),skip(repeat(not_p(eol,char_any)),eol);
 parse("// Hello C++ comment\nint main() {}",cpp_line_comment); //  Ok/"int main() {}"
@@ -508,15 +517,22 @@ parse("fortytwo",opt(parse_int<int>)); //  std::optional<int>{}/"fortytwo"
 ```
 
 # Adapters
-An Adapter is based on an existing parser and uses the result from that parser to validate or convert the result. 
+An adapter is based on an existing parser and uses the result from that parser to validate or convert the result. 
 
-##raw
-Raw returns the parsed data in a raw text-format. Used internally in our integral parsers and useful in cases where you need to call low-level text conversion functions locally.
+## Raw
+Raw returns the parsed data in a raw text-format (as a std::string_view). Used internally in our integral parsers and useful in cases where you need to call low-level text conversion functions locally. 
 Synopsis: `raw(parser)` where parser is a valid parser.
-## check
+
+### Example
+```c++
+parse("145 ",raw(repeat(digit))); //  "145"/" "
+```
+
+## Check
 `check` performs additional validation of the parsed result and reports failure in case the pass failed.
 Synopsis: 
 `check(parser,checker )`
+
 |Parameter|Requirement |
 | --- | --- |
 | parser | A valid parser of type T |
@@ -531,9 +547,11 @@ auto parse_even = check(int_parser<int>,is_even);
 parse("46",parse_even);  //  47/""
 parse("49",parse_even);  //  failure/""
 ```
-##as
+## As
 `as` converts the parsed type to another type. 
+
 | Synopsis | Action |
+| --- | --- |
 |`as<T>(Parser p)`| Converts the parsed value to a T |
 |`as(Skip s,Val v)`| Returns v if the skipper s succeeds |
 |`as(Parser p,Func f)`| Converts the parsed value t to a f(t) |
