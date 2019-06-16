@@ -2,7 +2,7 @@
 Welcome to qdpeg, yet another parsing expression grammar. I propose a linear read/skim of this document, but if you wish, you can skip directly to the relevant sections:
 * [Introduction](#introduction) which has a short motivation for our library.
 * [Examples and reference](#Examples-and-reference) to find code snippets and more information.
-* [Guide-lines and evolution](#Guide-lines-and-evolution) where you will find some thoughts about the evolution and guide-lines for how you should use qdpeg.
+* [Guidelines and evolution](#Guidelines-and-evolution) where you will find some thoughts about the evolution and guidelines for how you should use qdpeg.
 
 # Introduction
 qdpeg is a simple (quick and dirty) [Parsing Expression Grammer](https://en.wikipedia.org/wiki/Parsing_expression_grammar) parsing library.
@@ -160,7 +160,7 @@ parse("999999999999999 balloons",int_parser<int,10,sign_policy::allowed,5,5>); /
 parse("a42f",int_parser<unsigned char,16,sign_policy::allowed,2,2>);  // 0xa4/"2f"
 parse("17.34%",int_parser<long long,10,sign_policy::required>); // failure/"17.34%"
 ```
-## Floating point parser
+## Floating point parsers
 Parses real types (float, double and long double). Synopsis:
 ```c++
 template<class Real,
@@ -207,7 +207,7 @@ dec_p determines the presence and format of the decimal seperator using the decp
 | require_point | Require a '.' as separator | 
 
 
-## Symbol
+## Symbol parsers
 The Symbol templates are generators that parse text from a list of key-value pairs, giving a constant mapping from text to a value of the parsed type. The parse results in the longest key-element found in the current text. There are two variants, one giving a case insensitive mapping.
 
 ```c++
@@ -582,7 +582,7 @@ static_assert(std::is_same<Parsed_type<decltype(parse_and_conv)>,int>());
 parse("40",parse_and_conv);     64/"" (40 octal is 32, and 2*32 = 64)
 ```
 
-# Guide-lines and evolution
+# Guidelines and evolution
 Warning: qdpeg is an early stage library and change is likely to happen.
 ## Recursive parsers
 You define recursive parsers just like you would define any other recursive C++ function, typically by first declaring the function/callable:
@@ -614,14 +614,16 @@ which in qdpeg is ```repeat(A,at_least(1))```.
 
 
 ## Writing your own parsers
-Do not access anything in the details namespace. This is subject to change. Other parts of the library might also change, but an attempt is made to avoid that.
-If you write your own low-level parser, assume that Iter is a forward iterator.
-If your parser is implemented as a call-operator, it should be const.
+First: avoid doing so, but if you have to, follow these rules of thumb:
+* Do not access any undocumented functionality and in particular anything in the details namespace. All parts of this library might change, but these areas may be changed without considering portability.
+* Do not assume that you know the type of any of our types/variables. Lambdas in particular are likely to be replaced by regular structures.
+* Assume our iterators are forward_iterators, not random_access as is currently the case.
+* If your parser is implemented as a struct/class with an operator(), it should be const. There are use-cases for non-constant parsers, but this might cause backtracking problems.
 
 ## Evolution of qdpeg
 Following items are on my todo/wishlist:
  - Allowing state to be added to parsers. It would be nice if you could pass state to the parsers - e.g. to hold positions of text and a general symbol table.
  - Better error messages.
  - Unicode support.
- - Check performance and consider possible improvements. 
+ - Check performance and consider possible improvements. One known problem is that back-tracking might force recalculation of values. Caching this could result in a performance improvement.
  - Try to detect left-recursion and work around them if possible.
